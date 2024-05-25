@@ -72,8 +72,6 @@ export function ExtendedScrollComp({
     useFrame(() => {
         if (!enabled) return
         scroll.current = state.offset
-
-        // TODO: Add Damping
     })
     if (!state) return
     return (
@@ -134,7 +132,6 @@ export const ModelLoader: ForwardRefComponent<ModelLoaderProps, THREE.Group> = R
 
         useFrame(() => {
 
-            // console.log(getCurrentClampedOfsset(scroll.offset, min, max))
             Object.keys(materials).forEach(function (key) {
                 const mat = materials[key];
 
