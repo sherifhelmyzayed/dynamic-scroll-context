@@ -159,6 +159,8 @@ export const ModelLoader: ForwardRefComponent<ModelLoaderProps, THREE.Group> = R
                     ))
                     , 0.1
                 )
+            } else {
+                objRef.current.position.lerp(endPosVec, 0.1)
             }
 
             if (enableOpacityAnimation) {
@@ -166,6 +168,12 @@ export const ModelLoader: ForwardRefComponent<ModelLoaderProps, THREE.Group> = R
                     const mat = materials[key];
                     mat.transparent = true
                     mat.opacity = getCurrentClampedOfsset(scroll.offset, min, max)
+                });
+            } else {
+                Object.keys(materials).forEach(function (key) {
+                    const mat = materials[key];
+                    mat.transparent = true
+                    mat.opacity = 1
                 });
             }
         }, -1)
@@ -219,11 +227,15 @@ export const TextureLoader: ForwardRefComponent<TextureLoaderProps, THREE.Group>
                     ))
                     , 0.1
                 )
+            } else {
+                meshRef.current.position.lerp(endPosVec, 0.1)
             }
 
             if (enableOpacityAnimation) {
                 const clampedOffset = getCurrentClampedOfsset(scroll.offset, min, max)
                 matRef.current.opacity = clampedOffset
+            } else {
+                matRef.current.opacity = 1
             }
         }, -1)
 
