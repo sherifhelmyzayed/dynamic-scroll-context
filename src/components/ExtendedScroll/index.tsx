@@ -32,7 +32,6 @@ const getCurrentClampedOfsset = (offset: number, min: number, max: number): numb
     if (offset < min) return 0
     if (offset > max) return 1
     return ((offset - min) / (max - min))
-    // ((input - min) * 100) / (max - min)
 
 }
 
