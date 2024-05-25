@@ -10,15 +10,23 @@ type ForwardRefComponent<P, T> = ForwardRefExoticComponent<PropsWithoutRef<P> & 
 
 interface ModelLoaderProps extends GroupProps {
     url: string;
+    startPosition: number[];
+    endPosition: number[];
     min: number;
     max: number;
+    enableTranslationAnimation?: boolean
+    enableOpacityAnimation?: boolean
 }
 
 interface TextureLoaderProps extends GroupProps {
     url: string;
+    startPosition: number[];
+    endPosition: number[];
     size: THREE.Vector2
     min: number;
     max: number;
+    enableTranslationAnimation?: boolean
+    enableOpacityAnimation?: boolean
 }
 
 type ScrollControlsState = {
@@ -124,24 +132,47 @@ export const GenericGroup: ForwardRefComponent<GroupProps, THREE.Group> = React.
 
 
 export const ModelLoader: ForwardRefComponent<ModelLoaderProps, THREE.Group> = React.forwardRef(
-    ({ url, min, max, ...props }: ModelLoaderProps, ref) => {
+    ({
+        url,
+        min,
+        max,
+        endPosition,
+        startPosition,
+        enableTranslationAnimation = true,
+        enableOpacityAnimation = false,
+        ...props }: ModelLoaderProps, ref) => {
         const { scene, materials } = useGLTF(url);
 
+        const endPosVec = new THREE.Vector3(endPosition[0], endPosition[1], endPosition[2]);
+        const startPosVec = new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2]);
+
         const scroll = useOffsetScroll();
+        const objRef = React.useRef<THREE.Object3D>(null)
 
         useFrame(() => {
+            if (!objRef || !objRef.current) return
 
-            Object.keys(materials).forEach(function (key) {
-                const mat = materials[key];
+            if (enableTranslationAnimation) {
+                objRef.current.position.lerp(
+                    endPosVec.clone().add(startPosVec.clone().sub(endPosVec.clone()).multiplyScalar(
+                        getCurrentClampedOfsset(scroll.offset, min, max)
+                    ))
+                    , 0.1
+                )
+            }
 
-                mat.transparent = true
-                mat.opacity = getCurrentClampedOfsset(scroll.offset, min, max)
-            });
+            if (enableOpacityAnimation) {
+                Object.keys(materials).forEach(function (key) {
+                    const mat = materials[key];
+                    mat.transparent = true
+                    mat.opacity = getCurrentClampedOfsset(scroll.offset, min, max)
+                });
+            }
         }, -1)
 
         return (
             <group ref={ref} {...(props as ModelLoaderProps)} >
-                <primitive object={scene.clone()} />
+                <primitive ref={objRef} object={scene.clone()} />
             </group>
         )
     }
@@ -149,8 +180,18 @@ export const ModelLoader: ForwardRefComponent<ModelLoaderProps, THREE.Group> = R
 
 
 export const TextureLoader: ForwardRefComponent<TextureLoaderProps, THREE.Group> = React.forwardRef(
-    ({ size, url, max, min, ...props }: TextureLoaderProps, ref) => {
+    ({
+        size,
+        url,
+        max,
+        min,
+        endPosition,
+        startPosition,
+        enableTranslationAnimation = true,
+        enableOpacityAnimation = false,
+        ...props }: TextureLoaderProps, ref) => {
 
+        const meshRef = React.useRef<THREE.Mesh>(null)
         const matRef = React.useRef<THREE.MeshStandardMaterial>(null)
 
         const scroll = useOffsetScroll()
@@ -163,15 +204,32 @@ export const TextureLoader: ForwardRefComponent<TextureLoaderProps, THREE.Group>
         });
 
 
+        const endPosVec = new THREE.Vector3(endPosition[0], endPosition[1], endPosition[2]);
+        const startPosVec = new THREE.Vector3(startPosition[0], startPosition[1], startPosition[2]);
+
         useFrame(() => {
+            if (!meshRef || !meshRef.current) return
             if (!matRef || !matRef.current) return
-            const clampedOffset = getCurrentClampedOfsset(scroll.offset, min, max)
-            matRef.current.opacity = clampedOffset
+
+
+            if (enableTranslationAnimation) {
+                meshRef.current.position.lerp(
+                    endPosVec.clone().add(startPosVec.clone().sub(endPosVec.clone()).multiplyScalar(
+                        getCurrentClampedOfsset(scroll.offset, min, max)
+                    ))
+                    , 0.1
+                )
+            }
+
+            if (enableOpacityAnimation) {
+                const clampedOffset = getCurrentClampedOfsset(scroll.offset, min, max)
+                matRef.current.opacity = clampedOffset
+            }
         }, -1)
 
 
         return <group ref={ref} {...(props as GroupProps)} >
-            <mesh>
+            <mesh ref={meshRef}>
                 <planeGeometry args={[size.x, size.y]} />
                 <meshStandardMaterial
                     ref={matRef}
